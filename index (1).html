@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cosmos — CSS Animation</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    /* ─── CSS Variables ─── */
+    :root {
+      --bg:       #04060f;
+      --surface:  #080d1c;
+      --accent:   #c4a882;
+      --accent2:  #6a8cbe;
+      --accent3:  #b87abf;
+      --text:     #e8dfd0;
+      --muted:    #5a6070;
+      --glow:     rgba(196,168,130,0.18);
+      --glow2:    rgba(106,140,190,0.15);
+      --duration-slow: 18s;
+      --duration-med:  8s;
+      --duration-fast: 3s;
+      --ease-elastic: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      min-height: 100vh;
+      overflow-x: hidden;
+      cursor: none;
+    }
+
+    /* ─── Custom Cursor ─── */
+    #cursor {
+      position: fixed;
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: transform 0.08s ease, opacity 0.3s;
+      mix-blend-mode: difference;
+    }
+    #cursor-ring {
+      position: fixed;
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(196,168,130,0.45);
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.25s ease, width 0.3s var(--ease-elastic), height 0.3s var(--ease-elastic);
+    }
+    body:has(a:hover) #cursor-ring,
+    body:has(button:hover) #cursor-ring { width: 58px; height: 58px; }
+
+    /* ─── Starfield Canvas ─── */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── Nebula Background ─── */
+    .nebula {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .nebula-blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      animation: nebulaDrift var(--duration-slow) ease-in-out infinite alternate;
+    }
+    .nebula-blob:nth-child(1) {
+      width: 55vw; height: 55vw;
+      background: radial-gradient(circle, rgba(106,140,190,0.13) 0%, transparent 70%);
+      top: -15%; left: -10%;
+      animation-delay: 0s;
+    }
+    .nebula-blob:nth-child(2) {
+      width: 45vw; height: 45vw;
+      background: radial-gradient(circle, rgba(184,122,191,0.1) 0%, transparent 70%);
+      bottom: -10%; right: -5%;
+      animation-delay: -6s;
+      animation-direction: alternate-reverse;
+    }
+    .nebula-blob:nth-child(3) {
+      width: 35vw; height: 35vw;
+      background: radial-gradient(circle, rgba(196,168,130,0.08) 0%, transparent 70%);
+      top: 40%; left: 35%;
+      animation-delay: -12s;
+    }
+
+    @keyframes nebulaDrift {
+      0%   { transform: translate(0, 0) scale(1); }
+      33%  { transform: translate(3vw, -4vh) scale(1.07); }
+      66%  { transform: translate(-2vw, 3vh) scale(0.95); }
+      100% { transform: translate(4vw, 2vh) scale(1.04); }
+    }
+
+    /* ─── Layout ─── */
+    main {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ─── HERO SECTION ─── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+
+    /* Orrery — the main animation centerpiece */
+    .orrery-wrap {
+      position: relative;
+      width: min(480px, 86vw);
+      height: min(480px, 86vw);
+      margin: 0 auto 3rem;
+    }
+
+    .orrery {
+      position: relative;
+      width: 100%; height: 100%;
+      animation: orreryBreath 7s ease-in-out infinite;
+    }
+
+    @keyframes orreryBreath {
+      0%, 100% { transform: scale(1);   filter: brightness(1); }
+      50%       { transform: scale(1.025); filter: brightness(1.06); }
+    }
+
+    /* Sun */
+    .sun {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 64px; height: 64px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 38%, #fff8e8 0%, #f0c060 30%, #c47a20 70%, #7a3a00 100%);
+      box-shadow:
+        0 0 30px 8px rgba(240,180,60,0.55),
+        0 0 80px 20px rgba(240,140,20,0.25),
+        0 0 160px 60px rgba(240,100,0,0.10);
+      animation: sunPulse 4s ease-in-out infinite;
+      z-index: 10;
+    }
+
+    @keyframes sunPulse {
+      0%, 100% { box-shadow: 0 0 30px 8px rgba(240,180,60,0.55), 0 0 80px 20px rgba(240,140,20,0.25), 0 0 160px 60px rgba(240,100,0,0.10); }
+      50%       { box-shadow: 0 0 42px 14px rgba(240,180,60,0.7),  0 0 100px 35px rgba(240,140,20,0.35), 0 0 200px 80px rgba(240,100,0,0.15); }
+    }
+
+    /* Sun corona rings */
+    .sun::before, .sun::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    .sun::before {
+      width: 90px; height: 90px;
+      border: 1px solid rgba(240,180,60,0.2);
+      animation: coronaPulse 3s ease-in-out infinite;
+    }
+    .sun::after {
+      width: 120px; height: 120px;
+      border: 1px solid rgba(240,180,60,0.1);
+      animation: coronaPulse 3s ease-in-out infinite 0.5s;
+    }
+
+    @keyframes coronaPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      50%       { transform: translate(-50%, -50%) scale(1.15); opacity: 0.5; }
+    }
+
+    /* Orbit rings */
+    .orbit {
+      position: absolute;
+      top: 50%; left: 50%;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.07);
+      transform: translate(-50%, -50%);
+    }
+    .orbit::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      border-radius: 50%;
+      border-style: solid;
+      border-color: transparent;
+    }
+
+    /* Each planet lives in a rotating arm */
+    .orbit-arm {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform-origin: 0 0;
+      animation: orbitSpin linear infinite;
+    }
+
+    .planet {
+      position: absolute;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      top: 0; left: 0;
+    }
+
+    /* ── Planet 1: Mercury ── */
+    .orbit-1 { width: 110px; height: 110px; }
+    .arm-1 {
+      width: 55px; height: 0;
+      animation-duration: 4s;
+      margin-top: 0; margin-left: 0;
+    }
+    .planet-1 {
+      width: 10px; height: 10px;
+      background: radial-gradient(circle at 35% 35%, #ccc 0%, #888 50%, #444 100%);
+      left: 55px;
+      box-shadow: 0 0 6px 1px rgba(200,200,200,0.4);
+    }
+
+    /* ── Planet 2: Venus ── */
+    .orbit-2 { width: 162px; height: 162px; }
+    .arm-2 {
+      width: 81px; height: 0;
+      animation-duration: 7s;
+    }
+    .planet-2 {
+      width: 16px; height: 16px;
+      background: radial-gradient(circle at 35% 30%, #f5e8c0 0%, #d4a660 50%, #a06020 100%);
+      left: 81px;
+      box-shadow: 0 0 10px 2px rgba(210,170,90,0.5);
+    }
+
+    /* ── Planet 3: Earth ── */
+    .orbit-3 { width: 228px; height: 228px; }
+    .arm-3 {
+      width: 114px; height: 0;
+      animation-duration: 11s;
+    }
+    .planet-3 {
+      width: 18px; height: 18px;
+      background: radial-gradient(circle at 35% 30%, #a8d8f0 0%, #2070c0 40%, #107040 80%, #0a4020 100%);
+      left: 114px;
+      box-shadow: 0 0 14px 3px rgba(30,100,220,0.5);
+    }
+    /* Moon */
+    .moon-arm {
+      position: absolute;
+      top: 0; left: 0;
+      width: 28px; height: 0;
+      transform-origin: 0 0;
+      animation: orbitSpin 2.2s linear infinite;
+    }
+    .moon {
+      position: absolute;
+      width: 5px; height: 5px;
+      border-radius: 50%;
+      background: #ccc;
+      top: 0; left: 28px;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 4px rgba(200,200,200,0.5);
+    }
+
+    /* ── Planet 4: Mars ── */
+    .orbit-4 { width: 306px; height: 306px; }
+    .arm-4 {
+      width: 153px; height: 0;
+      animation-duration: 16s;
+    }
+    .planet-4 {
+      width: 13px; height: 13px;
+      background: radial-gradient(circle at 35% 30%, #f08060 0%, #c04020 50%, #702010 100%);
+      left: 153px;
+      box-shadow: 0 0 10px 2px rgba(200,80,30,0.5);
+    }
+
+    /* ── Planet 5: Jupiter (tilted elliptical orbit) ── */
+    .orbit-5 {
+      width: 400px; height: 300px;
+      transform: translate(-50%, -50%) rotate(-18deg);
+    }
+    .arm-5 {
+      width: 200px; height: 0;
+      animation-duration: 28s;
+      transform-origin: 0 0;
+      top: 50%; left: 50%;
+    }
+    .planet-5 {
+      width: 28px; height: 24px;
+      background: radial-gradient(ellipse at 35% 35%, #e8d8b0 0%, #c09860 35%, #a07038 65%, #804820 100%);
+      left: 200px;
+      border-radius: 50%;
+      box-shadow: 0 0 16px 4px rgba(180,150,80,0.4);
+      animation: jupiterSpin 2.5s linear infinite;
+    }
+
+    @keyframes jupiterSpin {
+      to { filter: hue-rotate(6deg) brightness(1.04); }
+    }
+
+    @keyframes orbitSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Asteroid belt */
+    .asteroid-belt {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 354px; height: 354px;
+      border-radius: 50%;
+    }
+    .asteroid {
+      position: absolute;
+      top: 50%; left: 50%;
+      border-radius: 50%;
+      background: rgba(180,170,150,0.6);
+      animation: orbitSpin linear infinite;
+      transform-origin: 0 0;
+    }
+
+    /* ─── Hero Text ─── */
+    .hero-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.35em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      animation: fadeUp 1s ease 0.2s both;
+    }
+
+    .hero-title {
+      font-size: clamp(2.8rem, 8vw, 6rem);
+      font-weight: 300;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 0.4rem;
+      animation: fadeUp 1s ease 0.4s both;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-sub {
+      font-size: clamp(1rem, 2.5vw, 1.4rem);
+      color: var(--muted);
+      letter-spacing: 0.04em;
+      animation: fadeUp 1s ease 0.6s both;
+      margin-bottom: 2.5rem;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      gap: 1rem;
+      animation: fadeUp 1s ease 0.8s both;
+    }
+
+    .btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      padding: 0.85rem 2.2rem;
+      border-radius: 0;
+      border: none;
+      cursor: none;
+      text-decoration: none;
+      transition: all 0.35s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.06);
+      transform: translateX(-100%);
+      transition: transform 0.4s ease;
+    }
+    .btn:hover::before { transform: translateX(0); }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--bg);
+    }
+    .btn-primary:hover {
+      background: #d4b892;
+      box-shadow: 0 0 28px rgba(196,168,130,0.5);
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      border: 1px solid rgba(196,168,130,0.35);
+    }
+    .btn-ghost:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px rgba(196,168,130,0.15);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Scroll hint */
+    .scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      animation: fadeUp 1s ease 1.2s both;
+    }
+    .scroll-line {
+      width: 1px;
+      height: 40px;
+      background: linear-gradient(to bottom, var(--accent), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 1; transform: scaleY(1); }
+      50%       { opacity: 0.4; transform: scaleY(0.6); }
+    }
+
+    /* ─── INFO SECTION ─── */
+    .section {
+      padding: 8rem 2rem;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.4em;
+      color: var(--accent2);
+      text-transform: uppercase;
+      margin-bottom: 2.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .section-tag::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(106,140,190,0.25);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .info-card {
+      background: var(--surface);
+      padding: 2.5rem 2rem;
+      transition: background 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .info-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent3));
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.4s ease;
+    }
+    .info-card:hover { background: #0c1225; }
+    .info-card:hover::before { transform: scaleX(1); }
+
+    .info-card h3 {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+    }
+    .info-card p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* ─── INTERACTIVE PLAYGROUND ─── */
+    .playground {
+      padding: 6rem 2rem;
+      text-align: center;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .play-title {
+      font-size: clamp(1.8rem, 4vw, 3rem);
+      margin-bottom: 0.5rem;
+      font-weight: 300;
+    }
+    .play-sub {
+      color: var(--muted);
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 3.5rem;
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+
+    .ctrl-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 0.6rem 1.4rem;
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      color: var(--muted);
+      cursor: none;
+      transition: all 0.25s ease;
+    }
+    .ctrl-btn:hover, .ctrl-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      box-shadow: 0 0 16px rgba(196,168,130,0.15);
+    }
+
+    /* Morphing shape animation */
+    .morph-stage {
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .morph-shape {
+      width: 180px;
+      height: 180px;
+      background: conic-gradient(
+        from 0deg at 50% 50%,
+        var(--accent2) 0%,
+        var(--accent3) 33%,
+        var(--accent)  66%,
+        var(--accent2) 100%
+      );
+      animation: morphFloat 6s ease-in-out infinite, morphRotate 12s linear infinite;
+      position: relative;
+    }
+
+    .morph-shape.wave    { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; animation: morphFloat 6s ease-in-out infinite, morphWave 8s ease-in-out infinite, morphRotate 12s linear infinite; }
+    .morph-shape.pulse   { border-radius: 50%; animation: morphFloat 6s ease-in-out infinite, morphPulse 1.2s ease-in-out infinite, morphRotate 12s linear infinite; }
+    .morph-shape.burst   { border-radius: 50%; clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%); animation: morphFloat 6s ease-in-out infinite, morphBurst 0.8s ease-in-out infinite alternate, morphRotate 6s linear infinite; }
+    .morph-shape.bounce  { border-radius: 50%; animation: morphBounce 0.7s cubic-bezier(0.34,1.56,0.64,1) infinite alternate, morphRotate 8s linear infinite; }
+
+    @keyframes morphFloat {
+      0%, 100% { transform: translateY(0); }
+      50%       { transform: translateY(-14px); }
+    }
+    @keyframes morphRotate {
+      to { filter: hue-rotate(360deg); }
+    }
+    @keyframes morphWave {
+      0%, 100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+      25%  { border-radius: 30% 70% 70% 30% / 30% 52% 48% 70%; }
+      50%  { border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%; }
+      75%  { border-radius: 67% 33% 47% 53% / 37% 20% 80% 63%; }
+    }
+    @keyframes morphPulse {
+      0%, 100% { transform: scale(1) translateY(-7px); box-shadow: 0 0 0 0 rgba(106,140,190,0.5); }
+      50%       { transform: scale(1.15) translateY(-7px); box-shadow: 0 0 0 30px rgba(106,140,190,0); }
+    }
+    @keyframes morphBurst {
+      from { transform: scale(0.9) rotate(0deg); }
+      to   { transform: scale(1.1) rotate(20deg); }
+    }
+    @keyframes morphBounce {
+      from { transform: translateY(0) scaleY(1) scaleX(1); }
+      to   { transform: translateY(-30px) scaleY(1.15) scaleX(0.9); }
+    }
+
+    /* Glow ring behind morph */
+    .morph-glow {
+      position: absolute;
+      width: 220px; height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(106,140,190,0.12) 0%, transparent 70%);
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    @keyframes glowPulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50%       { transform: scale(1.3); opacity: 1; }
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 4rem 2rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+    footer span { color: var(--accent); }
+
+    /* ─── Keyframe showcase (hidden, for code beauty) ─── */
+    @keyframes showcaseA {
+      0%   { opacity: 0; transform: scale(0.8) rotate(-5deg); }
+      50%  { opacity: 1; transform: scale(1.05) rotate(2deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes showcaseB {
+      0%, 100% { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); }
+      50%       { clip-path: polygon(10% 10%, 90% 5%, 95% 90%, 5% 95%); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Custom cursor -->
+  <div id="cursor"></div>
+  <div id="cursor-ring"></div>
+
+  <!-- Nebula background -->
+  <div class="nebula" aria-hidden="true">
+    <div class="nebula-blob"></div>
+    <div class="nebula-blob"></div>
+    <div class="nebula-blob"></div>
+  </div>
+
+  <!-- Starfield canvas -->
+  <canvas id="starfield" aria-hidden="true"></canvas>
+
+  <main>
+
+    <!-- ── HERO ── -->
+    <section class="hero">
+
+      <div class="orrery-wrap" aria-label="Animación de sistema solar">
+        <div class="orrery">
+
+          <!-- Sun -->
+          <div class="sun" aria-hidden="true"></div>
+
+          <!-- Orbit 1: Mercury -->
+          <div class="orbit orbit-1" aria-hidden="true"></div>
+          <div class="orbit-arm arm-1">
+            <div class="planet planet-1"></div>
+          </div>
+
+          <!-- Orbit 2: Venus -->
+          <div class="orbit orbit-2" aria-hidden="true"></div>
+          <div class="orbit-arm arm-2">
+            <div class="planet planet-2"></div>
+          </div>
+
+          <!-- Orbit 3: Earth + Moon -->
+          <div class="orbit orbit-3" aria-hidden="true"></div>
+          <div class="orbit-arm arm-3">
+            <div class="planet planet-3" id="earth">
+              <div class="moon-arm">
+                <div class="moon"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Orbit 4: Mars -->
+          <div class="orbit orbit-4" aria-hidden="true"></div>
+          <div class="orbit-arm arm-4">
+            <div class="planet planet-4"></div>
+          </div>
+
+          <!-- Asteroid belt -->
+          <div class="asteroid-belt" id="asteroidBelt" aria-hidden="true"></div>
+
+          <!-- Orbit 5: Jupiter (elliptical) -->
+          <div class="orbit orbit-5" aria-hidden="true"></div>
+          <div class="orbit-arm arm-5">
+            <div class="planet planet-5"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <p class="hero-label">CSS Animation &nbsp;·&nbsp; Sistema Solar</p>
+      <h1 class="hero-title">El <em>Cosmos</em><br>en Movimiento</h1>
+      <p class="hero-sub">Animación CSS pura — sin JavaScript, sin librerías</p>
+      <div class="hero-cta">
+        <a href="#playground" class="btn btn-primary">Interactuar</a>
+        <a href="#info" class="btn btn-ghost">Ver técnicas</a>
+      </div>
+      <div class="scroll-hint" aria-hidden="true">
+        <div class="scroll-line"></div>
+        <span>Scroll</span>
+      </div>
+    </section>
+
+    <!-- ── INFO CARDS ── -->
+    <section class="section" id="info" aria-label="Técnicas CSS utilizadas">
+      <p class="section-tag">Técnicas utilizadas</p>
+      <div class="info-grid" role="list">
+
+        <article class="info-card" role="listitem">
+          <h3>@keyframes</h3>
+          <p>Secuencias complejas con pasos en 0%, 25%, 50%, 75% y 100% para controlar el flujo orbital, el pulso solar y la metamorfosis de formas.</p>
+        </article>
+
+        <article class="info-card" role="listitem">
+          <h3>animation-duration</h3>
+          <p>Cada planeta tiene su propio período: Mercury en 4 s, Tierra en 11 s, Júpiter en 28 s — imitando la realidad astronómica.</p>
+        </article>
+
+        <article class="info-card" role="listitem">
+          <h3>timing-function</h3>
+          <p>Mezcla de <code>linear</code> para órbitas, <code>ease-in-out</code> para respiración y <code>cubic-bezier</code> elástico para rebotes.</p>
+        </article>
+
+        <article class="info-card" role="listitem">
+          <h3>animation-delay</h3>
+          <p>Valores negativos desfasan las nebulosas y estrellas para que el cosmos ya esté en movimiento al cargar la página.</p>
+        </article>
+
+        <article class="info-card" role="listitem">
+          <h3>iteration-count</h3>
+          <p>Todas las animaciones utilizan <code>infinite</code> para un sistema continuo; las transiciones de hover usan conteo único.</p>
+        </article>
+
+        <article class="info-card" role="listitem">
+          <h3>Triggers de usuario</h3>
+          <p>Hover activa bordes y efectos de brillo en tarjetas. <code>:active</code> en botones. Los controles del playground cambian estado con JS mínimo.</p>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- ── PLAYGROUND ── -->
+    <section class="playground" id="playground" aria-label="Playground interactivo">
+      <h2 class="play-title">Playground</h2>
+      <p class="play-sub">Hover &amp; click para cambiar la animación</p>
+
+      <div class="controls" role="group" aria-label="Controles de animación">
+        <button class="ctrl-btn active" data-mode="wave"   aria-pressed="true">Ola</button>
+        <button class="ctrl-btn"        data-mode="pulse"  aria-pressed="false">Pulso</button>
+        <button class="ctrl-btn"        data-mode="burst"  aria-pressed="false">Explosión</button>
+        <button class="ctrl-btn"        data-mode="bounce" aria-pressed="false">Rebote</button>
+      </div>
+
+      <div class="morph-stage" aria-live="polite" aria-label="Forma animada">
+        <div class="morph-glow"></div>
+        <div class="morph-shape wave" id="morphShape" aria-hidden="true"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>Hecho con <span>CSS puro</span> · @keyframes · animation · transforms · custom properties</p>
+  </footer>
+
+  <script>
+    // ── Custom cursor ──
+    const cur = document.getElementById('cursor');
+    const ring = document.getElementById('cursor-ring');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+    document.addEventListener('mousemove', e => {
+      mx = e.clientX; my = e.clientY;
+      cur.style.left = mx + 'px';
+      cur.style.top  = my + 'px';
+    });
+    (function tick() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      ring.style.left = rx + 'px';
+      ring.style.top  = ry + 'px';
+      requestAnimationFrame(tick);
+    })();
+
+    // ── Starfield ──
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+    let stars = [];
+    function resize() {
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+      stars = Array.from({ length: 180 }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2 + 0.2,
+        a: Math.random(),
+        speed: Math.random() * 0.008 + 0.003,
+        phase: Math.random() * Math.PI * 2
+      }));
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    let t = 0;
+    (function drawStars() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      t += 0.012;
+      stars.forEach(s => {
+        const opacity = 0.3 + 0.7 * Math.abs(Math.sin(t * s.speed + s.phase));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(220, 215, 200, ${opacity * s.a})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(drawStars);
+    })();
+
+    // ── Asteroid belt ──
+    const belt = document.getElementById('asteroidBelt');
+    for (let i = 0; i < 22; i++) {
+      const a = document.createElement('div');
+      a.className = 'asteroid';
+      const r = 155 + Math.random() * 22;
+      const size = 1 + Math.random() * 2.5;
+      const dur  = 28 + Math.random() * 18;
+      const delay = -(Math.random() * dur);
+      a.style.cssText = `
+        width:${size}px; height:${size}px; border-radius:50%;
+        width:${size}px; height:${size}px;
+        animation: orbitSpin ${dur}s linear ${delay}s infinite;
+        transform-origin: -${r}px 0;
+        top: 0; left: 0;
+        opacity: ${0.3 + Math.random() * 0.5};
+      `;
+      belt.appendChild(a);
+    }
+
+    // ── Morph playground ──
+    const shape    = document.getElementById('morphShape');
+    const ctrlBtns = document.querySelectorAll('.ctrl-btn');
+    ctrlBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        ctrlBtns.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+        shape.className = 'morph-shape ' + btn.dataset.mode;
+      });
+    });
+  </script>
+</body>
+</html>
